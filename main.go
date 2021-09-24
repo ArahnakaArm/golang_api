@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"hello/handler"
+	"hello/logs"
 	"hello/repository"
 	"hello/service"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -22,14 +22,18 @@ func main() {
 	db := initDatabase()
 	customerRepository := repository.NewCustomerRepositoryDB(db)
 
-	customerRepositoryMock := repository.NewCustomerRepositoryMock()
+	/* 	customerRepositoryMock := repository.NewCustomerRepositoryMock()
 
-	_ = customerRepository
-	_ = customerRepositoryMock
+	   	_ = customerRepository
+	   	_ = customerRepositoryMock */
 
 	customerService := service.NewCustomerService(customerRepository)
 
 	customerHandler := handler.NewCustomerHandler(customerService)
+
+	accountRepositoryDB := repository.NewAccountRepositoryDB(db)
+	accountService := service.NewAccountService(accountRepositoryDB)
+	accountHandler := handler.NewAccountHandler(accountService)
 
 	router := mux.NewRouter()
 
@@ -37,7 +41,14 @@ func main() {
 
 	router.HandleFunc("/customers/{customerID:[0-9]+}", customerHandler.GetCustomer).Methods(http.MethodGet)
 
-	log.Printf("Banking service started at port %v", viper.GetInt("app.port"))
+	router.HandleFunc("/customers/{customerID:[0-9]+}/accounts", accountHandler.GetAccount).Methods(http.MethodGet)
+
+	router.HandleFunc("/customers/{customerID:[0-9]+}/accounts", accountHandler.NewAccount).Methods(http.MethodPost)
+	/* log.Printf("Banking service started at port %v", viper.GetInt("app.port"))
+	 */
+
+	/* logs.Log.Info("Banking service started at port " + viper.GetString("app.port")) */
+	logs.Info("Banking service started at port " + viper.GetString("app.port"))
 	http.ListenAndServe(fmt.Sprintf(":%v", viper.GetInt("app.port")), router)
 
 }
